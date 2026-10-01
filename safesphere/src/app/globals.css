@@ -37,6 +37,30 @@
 
 :root {
   color-scheme: light;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --danger: #dc2626;
+}
+
+html.dark {
+  color-scheme: dark;
+  --background: #080d1a;
+  --foreground: #f8fafc;
+  --card: #0f172a;
+  --card-foreground: #f8fafc;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #1e293b;
+  --muted: #94a3b8;
+  --border: #1e293b;
+  --danger: #ef4444;
 }
 
 html {

@@ -17,7 +17,10 @@ import { DatabaseSync } from "node:sqlite";
 const globalForDb = globalThis as unknown as { __safesphereDb?: DatabaseSync };
 
 function open() {
-  const file = process.env.SAFESPHERE_DB_PATH || path.join(process.cwd(), "data", "safesphere.db");
+  const defaultPath = process.env.VERCEL
+    ? path.join("/tmp", "safesphere.db")
+    : path.join(process.cwd(), "data", "safesphere.db");
+  const file = process.env.SAFESPHERE_DB_PATH || defaultPath;
   mkdirSync(path.dirname(file), { recursive: true });
   const db = new DatabaseSync(file);
   db.exec(`

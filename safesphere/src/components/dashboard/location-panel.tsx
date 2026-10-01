@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { copyText, distanceKm, formatCoords, formatTime, mapsLink, osmLink } from "@/lib/format";
 import type { Geolocation } from "@/lib/use-geolocation";
-import { type Facility, DEFAULT_GOA_LOCATION, VERIFIED_GOA_FACILITIES } from "./safety-map";
+import { type Facility, DEFAULT_GOA_LOCATION, VERIFIED_GOA_FACILITIES } from "@/lib/map-data";
 import type { ToastMessage } from "./toast";
 import type { GeoPoint } from "@/lib/types";
 
@@ -74,19 +74,40 @@ export function LocationPanel({ geo, notify }: { geo: Geolocation; notify: (mess
       setHelpError("Your location is needed to search nearby. Use the search links below instead.");
       return;
     }
-    // Round to ~100 m before sending to the public Overpass API, to limit what is disclosed.
+    // Round to ~100 m before sending to public Overpass API
     const lat = Number(origin.lat.toFixed(3));
     const lng = Number(origin.lng.toFixed(3));
-    const query = `[out:json][timeout:20];nwr${type.filter}(around:${RADIUS_M},${lat},${lng});out center tags 40;`;
-    try {
-      const response = await fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `data=${encodeURIComponent(query)}`,
-        signal: AbortSignal.timeout(25_000),
-      });
-      if (!response.ok) throw new Error(`Overpass responded ${response.status}`);
-      const data = (await response.json()) as { elements: OverpassElement[] };
+    const query = `[out:json][timeout:10];nwr${type.filter}(around:${RADIUS_M},${lat},${lng});out center tags 40;`;
+
+    const OVERPASS_ENDPOINTS = [
+      "https://overpass-api.de/api/interpreter",
+      "https://overpass.kumi.systems/api/interpreter",
+      "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    ];
+
+    let data: { elements: OverpassElement[] } | null = null;
+
+    for (const endpoint of OVERPASS_ENDPOINTS) {
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `data=${encodeURIComponent(query)}`,
+          signal: AbortSignal.timeout(6000),
+        });
+        if (response.ok) {
+          const json = (await response.json()) as { elements: OverpassElement[] };
+          if (json && Array.isArray(json.elements)) {
+            data = json;
+            break;
+          }
+        }
+      } catch {
+        // try next endpoint
+      }
+    }
+
+    if (data && data.elements && data.elements.length > 0) {
       const results = data.elements
         .map((element): Facility | null => {
           const pLat = element.lat ?? element.center?.lat;
@@ -106,12 +127,30 @@ export function LocationPanel({ geo, notify }: { geo: Geolocation; notify: (mess
         .filter((facility): facility is Facility => facility !== null)
         .sort((a, b) => a.distanceKm - b.distanceKm)
         .slice(0, 8);
-      setFacilities(results);
+
+      if (results.length > 0) {
+        setFacilities(results);
+        setHelpState("done");
+        return;
+      }
+    }
+
+    // Robust Fallback: Use local verified emergency facilities matching requested type
+    const localMatches = VERIFIED_GOA_FACILITIES
+      .filter((f) => f.kind === type.id || (type.id === "hospital" && (f.kind === "hospital" || f.kind === "security")))
+      .map((f) => ({
+        ...f,
+        distanceKm: distanceKm(origin, { lat: f.lat, lng: f.lng }),
+      }))
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+
+    if (localMatches.length > 0) {
+      setFacilities(localMatches);
       setHelpState("done");
-    } catch {
+    } else {
       setFacilities([]);
       setHelpState("error");
-      setHelpError("Couldn’t reach OpenStreetMap’s Overpass service. Use the search links below instead.");
+      setHelpError("Overpass server temporary offline. Please click the direct search links below.");
     }
   }
 

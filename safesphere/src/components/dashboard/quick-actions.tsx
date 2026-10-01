@@ -77,6 +77,30 @@ export function QuickActions({
           </span>
           Add trusted contact
         </button>
+
+        {/* Goa-specific quick links */}
+        <div className="mt-1 pt-2 border-t border-line">
+          <p className="text-[10px] font-semibold text-muted uppercase tracking-wider mb-2">Goa Safety Tools</p>
+          <div className="grid gap-1.5">
+            <a href="/road-emergency" className={`${itemClass} hover:border-danger hover:bg-danger-50 !min-h-11`}>
+              <span className="grid size-8 place-items-center rounded-lg bg-danger-50 text-danger text-base">🚨</span>
+              Road Emergency + First Aid
+            </a>
+            <a href="/beach" className={`${itemClass} !min-h-11`}>
+              <span className="grid size-8 place-items-center rounded-lg bg-cyan-50 text-cyan-600 text-base">🏖</span>
+              Beach Flag Status (Live)
+            </a>
+            <a href="/ferries" className={`${itemClass} !min-h-11`}>
+              <span className="grid size-8 place-items-center rounded-lg bg-blue-50 text-blue-600 text-base">⚓</span>
+              Ferry Status
+            </a>
+            <a href="/query" className={`${itemClass} !min-h-11`}>
+              <span className="grid size-8 place-items-center rounded-lg bg-violet-50 text-violet-600 text-base">✨</span>
+              Ask AI — Goa Safety
+            </a>
+          </div>
+        </div>
+
         <a href="#guidance" className={itemClass}>
           <span className="grid size-9 place-items-center rounded-lg bg-brand-50 text-brand">
             <BookOpenCheck size={18} aria-hidden />

@@ -450,7 +450,7 @@ export function Dashboard({
             />
 
             {/* First Responder Mesh View */}
-            <section id="responder" className="scroll-mt-24 space-y-4">
+            <section id="responder" className="scroll-mt-24 space-y-4 lg:col-span-3">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="text-primary" size={20} />
                 <h2 className="text-lg font-bold text-[var(--foreground)]">Guardian First Responder Mesh</h2>
@@ -463,7 +463,7 @@ export function Dashboard({
             </section>
 
             {/* Tactical Incident Command Center */}
-            <section id="command" className="scroll-mt-24 space-y-4">
+            <section id="command" className="scroll-mt-24 space-y-4 lg:col-span-3">
               <div className="flex items-center gap-2">
                 <Radio className="text-danger" size={20} />
                 <h2 className="text-lg font-bold text-[var(--foreground)]">Tactical Incident Command Center</h2>
