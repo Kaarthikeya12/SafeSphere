@@ -131,12 +131,23 @@ class SoundEngine {
     }
   }
 
+  playSiren(durationSeconds = 1.5) {
+    this.startSiren();
+    setTimeout(() => {
+      this.stopSiren();
+    }, durationSeconds * 1000);
+  }
+
   speak(text: string, rate = 1.0) {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.rate = rate;
     window.speechSynthesis.speak(u);
+  }
+
+  speakText(text: string, rate = 1.0) {
+    this.speak(text, rate);
   }
 
   stopSpeech() {

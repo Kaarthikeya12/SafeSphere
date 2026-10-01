@@ -10,6 +10,8 @@ import {
   LogOut,
   MapPinned,
   Phone,
+  Radio,
+  ShieldAlert,
   ShieldCheck,
   Siren,
   Timer,
@@ -36,6 +38,8 @@ import { SosConfirmModal, SosPanel } from "./sos-panel";
 import { StatusBanner } from "./status-banner";
 import { Toast, type ToastMessage } from "./toast";
 import { FakeCallModal } from "./fake-call-modal";
+import { ResponderPanel } from "./responder-panel";
+import { CommandPanel } from "./command-panel";
 import { soundEngine } from "@/lib/sound";
 
 export type DashboardUser = { id: string; name: string; email: string; image: string | null };
@@ -47,6 +51,8 @@ const NO_CHECKIN: CheckIn | null = null;
 const SECTIONS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "sos", label: "SOS", icon: Siren },
+  { id: "responder", label: "Responder Mesh", icon: ShieldAlert },
+  { id: "command", label: "Command Center", icon: Radio },
   { id: "checkin", label: "Check-in", icon: Timer },
   { id: "location", label: "Location & help", icon: MapPinned },
   { id: "contacts", label: "Contacts", icon: Users },
@@ -442,6 +448,32 @@ export function Dashboard({
               onToggleSiren={toggleDashboardSiren}
               isSirenActive={isSirenActive}
             />
+
+            {/* First Responder Mesh View */}
+            <section id="responder" className="scroll-mt-24 space-y-4">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="text-primary" size={20} />
+                <h2 className="text-lg font-bold text-[var(--foreground)]">Guardian First Responder Mesh</h2>
+              </div>
+              <ResponderPanel
+                onNotify={(msg, tone) =>
+                  notify(msg, tone === "urgent" ? "error" : tone === "positive" ? "success" : "info")
+                }
+              />
+            </section>
+
+            {/* Tactical Incident Command Center */}
+            <section id="command" className="scroll-mt-24 space-y-4">
+              <div className="flex items-center gap-2">
+                <Radio className="text-danger" size={20} />
+                <h2 className="text-lg font-bold text-[var(--foreground)]">Tactical Incident Command Center</h2>
+              </div>
+              <CommandPanel
+                onNotify={(msg, tone) =>
+                  notify(msg, tone === "urgent" ? "error" : tone === "positive" ? "success" : "info")
+                }
+              />
+            </section>
 
             <LocationPanel geo={geo} notify={notify} />
             <ContactsPanel

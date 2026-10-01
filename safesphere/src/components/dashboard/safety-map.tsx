@@ -173,8 +173,8 @@ export default function SafetyMap({
 
   // High quality tile URL for dark or light theme
   const tileUrl = isDark
-    ? "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-    : "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+    ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
   return (
     <div className="relative h-full w-full">
