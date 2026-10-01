@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Copy, Loader2, MapPin, MessageSquareText, Phone, RefreshCw, Share2, ShieldCheck, Siren } from "lucide-react";
+import { AlertTriangle, Copy, Loader2, MapPin, MessageSquareText, Mic, MicOff, Phone, RefreshCw, Share2, ShieldCheck, Siren, Volume2, VolumeX } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { copyText, formatCoords, formatDateTime, mapsLink } from "@/lib/format";
 import type { Contact, SosState } from "@/lib/types";
 import type { ToastMessage } from "./toast";
+import { soundEngine } from "@/lib/sound";
+import { speechDetector } from "@/lib/speech";
 
 export function buildSosMessage(name: string, sos: SosState) {
   const lines = [`EMERGENCY: ${name} needs help.`, `Time: ${formatDateTime(sos.activatedAt)}`];
@@ -78,6 +80,37 @@ export function SosPanel({
 }) {
   const [opened, setOpened] = useState<Record<string, true>>({});
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [isSirenActive, setIsSirenActive] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  function toggleSiren() {
+    if (isSirenActive) {
+      soundEngine.stopSiren();
+      setIsSirenActive(false);
+    } else {
+      soundEngine.startSiren();
+      setIsSirenActive(true);
+      notify("Emergency Siren blaring at maximum volume!", "error");
+    }
+  }
+
+  function toggleVoice() {
+    if (isListening) {
+      speechDetector.stop();
+      setIsListening(false);
+    } else {
+      if (!speechDetector.isSupported()) {
+        notify("Voice distress detection not supported in this browser.", "info");
+        return;
+      }
+      speechDetector.start((kw) => {
+        notify(`Distress trigger "${kw}" recognized! Opening SOS...`, "error");
+        onRequestActivate();
+      });
+      setIsListening(true);
+      notify("Hands-Free Mic Active: Listening for 'Help me', 'Bachao', 'Emergency'...", "info");
+    }
+  }
 
   if (!sos) {
     return (
@@ -97,6 +130,36 @@ export function SosPanel({
             <span className="text-2xl font-extrabold tracking-[0.2em]">SOS</span>
           </span>
         </button>
+
+        {/* Tactical Quick Triggers Bar */}
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={toggleSiren}
+            className={`btn btn-sm border text-[11px] font-bold ${
+              isSirenActive
+                ? "border-danger bg-danger text-white animate-pulse"
+                : "border-line bg-white hover:border-danger text-ink"
+            }`}
+          >
+            {isSirenActive ? <Volume2 size={13} className="animate-spin" /> : <VolumeX size={13} />}
+            {isSirenActive ? "Stop Siren" : "Audio Siren"}
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleVoice}
+            className={`btn btn-sm border text-[11px] font-bold ${
+              isListening
+                ? "border-brand bg-brand text-white animate-pulse"
+                : "border-line bg-white hover:border-brand text-ink"
+            }`}
+          >
+            {isListening ? <MicOff size={13} /> : <Mic size={13} />}
+            {isListening ? "Mic Active" : "Voice 'Bachao'"}
+          </button>
+        </div>
+
         <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted">
           <ShieldCheck size={14} className="text-safe" aria-hidden /> Asks to confirm. Never sends anything by itself.
         </p>

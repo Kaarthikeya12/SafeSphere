@@ -20,8 +20,9 @@ import {
 } from "lucide-react";
 import { copyText, distanceKm, formatCoords, formatTime, mapsLink, osmLink } from "@/lib/format";
 import type { Geolocation } from "@/lib/use-geolocation";
-import type { Facility } from "./safety-map";
+import { type Facility, DEFAULT_GOA_LOCATION, VERIFIED_GOA_FACILITIES } from "./safety-map";
 import type { ToastMessage } from "./toast";
+import type { GeoPoint } from "@/lib/types";
 
 const SafetyMap = dynamic(() => import("./safety-map"), {
   ssr: false,
@@ -45,18 +46,29 @@ type OverpassElement = { id: number; type: string; lat?: number; lon?: number; c
 const RADIUS_M = 5000;
 const SEARCH_LINKS = ["Hospital", "Police station", "Fire station", "Pharmacy", "Relief shelter"];
 
+export const GOA_PRESETS = [
+  { name: "GEC Farmagudi Campus", lat: 15.4227, lng: 74.0089 },
+  { name: "Ponda Market & Bus Stand", lat: 15.4026, lng: 74.0152 },
+  { name: "Panjim Miramar Promenade", lat: 15.4862, lng: 73.8078 },
+  { name: "Calangute Beach Belt", lat: 15.5439, lng: 73.7553 },
+  { name: "GMC Bambolim Hospital", lat: 15.4619, lng: 73.8560 },
+  { name: "Margao Railway Station", lat: 15.2736, lng: 73.9582 },
+];
+
 export function LocationPanel({ geo, notify }: { geo: Geolocation; notify: (message: string, tone?: ToastMessage["tone"]) => void }) {
   const [helpType, setHelpType] = useState<HelpType | null>(null);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [helpState, setHelpState] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [helpError, setHelpError] = useState<string | null>(null);
+  const [customPosition, setCustomPosition] = useState<GeoPoint | null>(null);
   const { position } = geo;
+  const activePosition: GeoPoint = position ?? customPosition ?? DEFAULT_GOA_LOCATION;
 
   async function findHelp(type: HelpType) {
     setHelpType(type);
     setHelpState("loading");
     setHelpError(null);
-    const origin = position ?? (await geo.locateOnce());
+    const origin = activePosition;
     if (!origin) {
       setHelpState("error");
       setHelpError("Your location is needed to search nearby. Use the search links below instead.");
@@ -155,53 +167,80 @@ export function LocationPanel({ geo, notify }: { geo: Geolocation; notify: (mess
       )}
 
       <div className="mt-4 grid gap-4 md:grid-cols-[1.4fr_1fr]">
-        <div className="h-72 overflow-hidden rounded-xl border border-line bg-surface md:h-80">
-          {position ? (
-            <SafetyMap position={position} facilities={facilities} />
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-              <span className="grid size-12 place-items-center rounded-2xl bg-white text-brand shadow-sm">
-                <MapPin size={22} aria-hidden />
-              </span>
-              <p className="text-sm text-muted">Your map appears here once you allow location access.</p>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={() => void geo.locateOnce()} disabled={geo.status === "locating"}>
-                <LocateFixed size={14} aria-hidden /> Locate me once
+        <div className="flex flex-col gap-2">
+          <div className="h-72 overflow-hidden rounded-xl border border-line bg-surface md:h-80 shadow-sm">
+            <SafetyMap
+              position={activePosition}
+              facilities={facilities}
+              onPositionChange={(pos) => {
+                setCustomPosition(pos);
+                notify(`Map pinned to ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`, "info");
+              }}
+            />
+          </div>
+          {/* Quick Goa Sector Presets */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+            <span className="text-[11px] font-semibold text-muted">Goa Hotspots:</span>
+            {GOA_PRESETS.map((spot) => (
+              <button
+                key={spot.name}
+                type="button"
+                onClick={() => {
+                  setCustomPosition({
+                    lat: spot.lat,
+                    lng: spot.lng,
+                    accuracy: 10,
+                    timestamp: Date.now(),
+                  });
+                  notify(`Map centered on ${spot.name}`, "info");
+                }}
+                className={`chip border text-[11px] py-1 transition-colors ${
+                  activePosition.lat === spot.lat && activePosition.lng === spot.lng
+                    ? "border-brand bg-brand-50 text-brand"
+                    : "border-line bg-white hover:border-brand text-ink"
+                }`}
+              >
+                {spot.name}
               </button>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
 
         <div className="flex flex-col gap-3">
-          {position && (
-            <div className="rounded-xl border border-line p-3">
-              <p className="text-xs font-semibold tracking-wide text-muted uppercase">Coordinates</p>
-              <p className="mt-1 font-mono text-sm text-ink">{formatCoords(position)}</p>
-              <p className="text-xs text-muted">
-                {position.accuracy ? `±${position.accuracy} m · ` : ""}updated {formatTime(position.timestamp)}
-              </p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+          <div className="rounded-xl border border-line p-3 bg-white">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold tracking-wide text-muted uppercase">Active Pin Coordinates</p>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-50 text-brand">
+                {position ? "Live GPS" : customPosition ? "Manual Pin" : "GEC Default"}
+              </span>
+            </div>
+            <p className="mt-1 font-mono text-sm text-ink">{formatCoords(activePosition)}</p>
+            <p className="text-xs text-muted">
+              {activePosition.accuracy ? `±${activePosition.accuracy} m · ` : ""}
+              {position ? `updated ${formatTime(activePosition.timestamp)}` : "Click anywhere on map to reposition"}
+            </p>
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={async () => notify((await copyText(mapsLink(activePosition))) ? "Location link copied." : "Couldn’t copy the link.", "info")}
+              >
+                <Copy size={14} aria-hidden /> Copy link
+              </button>
+              {typeof navigator !== "undefined" && "share" in navigator && (
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm"
-                  onClick={async () => notify((await copyText(mapsLink(position))) ? "Location link copied." : "Couldn’t copy the link.", "info")}
+                  onClick={() => navigator.share({ title: "My location", url: mapsLink(activePosition) }).catch(() => undefined)}
                 >
-                  <Copy size={14} aria-hidden /> Copy link
+                  <Share2 size={14} aria-hidden /> Share
                 </button>
-                {typeof navigator !== "undefined" && "share" in navigator && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => navigator.share({ title: "My location", url: mapsLink(position) }).catch(() => undefined)}
-                  >
-                    <Share2 size={14} aria-hidden /> Share
-                  </button>
-                )}
-                <a className="btn btn-ghost btn-sm" href={osmLink(position)} target="_blank" rel="noreferrer">
-                  OSM <ExternalLink size={12} aria-hidden />
-                </a>
-              </div>
+              )}
+              <a className="btn btn-ghost btn-sm" href={osmLink(activePosition)} target="_blank" rel="noreferrer">
+                OSM <ExternalLink size={12} aria-hidden />
+              </a>
             </div>
-          )}
+          </div>
 
           <div>
             <p className="text-xs font-semibold tracking-wide text-muted uppercase">Find help within 5 km</p>

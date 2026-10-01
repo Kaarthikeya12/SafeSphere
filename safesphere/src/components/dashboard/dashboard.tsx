@@ -17,6 +17,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { api } from "@/lib/api-client";
 import { authClient } from "@/lib/auth-client";
 import { useStoredState } from "@/lib/storage";
@@ -34,6 +35,8 @@ import { ReportsPanel, type NewReport, type ReportPatch } from "./reports-panel"
 import { SosConfirmModal, SosPanel } from "./sos-panel";
 import { StatusBanner } from "./status-banner";
 import { Toast, type ToastMessage } from "./toast";
+import { FakeCallModal } from "./fake-call-modal";
+import { soundEngine } from "@/lib/sound";
 
 export type DashboardUser = { id: string; name: string; email: string; image: string | null };
 export type Notify = (message: string, tone?: ToastMessage["tone"]) => void;
@@ -137,6 +140,8 @@ export function Dashboard({
   const [sos, setSos] = useStoredState<SosState | null>(`${scope}sos`, NO_SOS);
   const [checkIn, setCheckIn] = useStoredState<CheckIn | null>(`${scope}checkin`, NO_CHECKIN);
   const [sosConfirmOpen, setSosConfirmOpen] = useState(false);
+  const [fakeCallOpen, setFakeCallOpen] = useState(false);
+  const [isSirenActive, setIsSirenActive] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -151,6 +156,17 @@ export function Dashboard({
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 4500);
   }, []);
+
+  const toggleDashboardSiren = useCallback(() => {
+    if (isSirenActive) {
+      soundEngine.stopSiren();
+      setIsSirenActive(false);
+    } else {
+      soundEngine.startSiren();
+      setIsSirenActive(true);
+      notify("100dB Emergency Siren blaring!", "error");
+    }
+  }, [isSirenActive, notify]);
 
   useEffect(
     () => () => {
@@ -317,6 +333,7 @@ export function Dashboard({
             </div>
             <p className="hidden text-sm font-semibold text-ink lg:block">Dashboard</p>
             <div className="flex items-center gap-2 sm:gap-3">
+              <ThemeToggle />
               <div className="flex items-center gap-2.5">
                 <Avatar user={user} />
                 <div className="hidden min-w-0 text-left sm:block">
@@ -421,6 +438,9 @@ export function Dashboard({
               }}
               onNewReport={() => setReportOpen(true)}
               onAddContact={() => setContactOpen(true)}
+              onTriggerFakeCall={() => setFakeCallOpen(true)}
+              onToggleSiren={toggleDashboardSiren}
+              isSirenActive={isSirenActive}
             />
 
             <LocationPanel geo={geo} notify={notify} />
@@ -484,6 +504,7 @@ export function Dashboard({
       )}
 
       <SosConfirmModal open={sosConfirmOpen} onClose={() => setSosConfirmOpen(false)} onConfirm={activateSos} />
+      <FakeCallModal open={fakeCallOpen} onClose={() => setFakeCallOpen(false)} />
       <Toast toast={toast} onDismiss={() => setToast(null)} />
     </div>
   );

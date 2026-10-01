@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const NAV = [
   { href: "/#features", label: "Features" },
@@ -20,7 +21,8 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Link href="/login" className="btn btn-ghost px-3">
             Log in
           </Link>

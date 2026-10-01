@@ -106,10 +106,124 @@ html {
   }
 }
 
+/* Dark mode theme overrides */
+html.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #080d1a;
+  color: #94a3b8;
+}
+
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4 {
+  color: #f8fafc;
+}
+
+.dark .card {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+}
+
+.dark aside {
+  background-color: #0b1120 !important;
+  border-color: #1e293b !important;
+}
+
+.dark header {
+  background-color: rgba(11, 17, 32, 0.95) !important;
+  border-color: #1e293b !important;
+}
+
+.dark footer {
+  background-color: #0b1120 !important;
+  border-color: #1e293b !important;
+}
+
+.dark .bg-surface {
+  background-color: #080d1a !important;
+}
+
+.dark .bg-white {
+  background-color: #0f172a !important;
+}
+
+.dark .text-ink {
+  color: #f8fafc !important;
+}
+
+.dark .text-ink-soft {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-body {
+  color: #94a3b8 !important;
+}
+
+.dark .text-muted {
+  color: #64748b !important;
+}
+
+.dark .border-line {
+  border-color: #1e293b !important;
+}
+
+.dark .border-line-strong {
+  border-color: #334155 !important;
+}
+
+.dark .btn-secondary {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+.dark .btn-secondary:hover {
+  background-color: #334155 !important;
+}
+
+.dark .btn-ghost {
+  color: #cbd5e1 !important;
+}
+
+.dark .btn-ghost:hover {
+  background-color: #1e293b !important;
+}
+
+.dark .field {
+  background-color: #0b1120 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+.dark .chip {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
 /* Leaflet tweaks */
 .leaflet-container {
   font-family: var(--font-sans);
   z-index: 0;
+}
+
+.dark .leaflet-container {
+  background-color: #0f172a !important;
+}
+
+.dark .leaflet-popup-content-wrapper {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+}
+
+.dark .leaflet-popup-tip {
+  background-color: #1e293b !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
